@@ -33,6 +33,7 @@
   "dependencies": {
     "@datadog/pprof": "^5.9.0",
     "parse-duration": "^2.1.4",
+    "pino": "^10.1.0",
     "react-pprof": "^1.2.0"
   },
   "devDependencies": {

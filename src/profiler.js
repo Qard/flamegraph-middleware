@@ -8,6 +8,7 @@ export class Profiler {
     this.heapSamplingInterval = options.heapSamplingInterval || 512 * 1024
     this.heapStackDepth = options.heapStackDepth || 64
     this.heapStarted = false
+    this.logger = options.logger?.child({ component: 'profiler' }) || options.logger
   }
 
   /**
@@ -17,6 +18,10 @@ export class Profiler {
     if (!this.heapStarted) {
       pprof.heap.start(this.heapSamplingInterval, this.heapStackDepth)
       this.heapStarted = true
+      this.logger?.debug(
+        { heapSamplingInterval: this.heapSamplingInterval, heapStackDepth: this.heapStackDepth },
+        'Heap profiling initialized'
+      )
     }
   }
 
@@ -49,7 +54,10 @@ export class Profiler {
    * @returns {Promise<Profile>}
    */
   async collectCPUProfile (duration) {
-    return await pprof.time.profile({ durationMillis: duration })
+    this.logger?.debug({ duration, type: 'cpu' }, 'Starting CPU profile collection')
+    const profile = await pprof.time.profile({ durationMillis: duration })
+    this.logger?.info({ type: 'cpu', duration }, 'CPU profile collected successfully')
+    return profile
   }
 
   /**
@@ -59,9 +67,12 @@ export class Profiler {
    * @returns {Promise<Profile>}
    */
   async collectHeapProfile (duration) {
+    this.logger?.debug({ duration, type: 'heap' }, 'Starting heap profile collection')
     // Wait for the same duration as CPU profiling for consistency
     await new Promise(resolve => setTimeout(resolve, duration))
-    return await pprof.heap.profile()
+    const profile = await pprof.heap.profile()
+    this.logger?.info({ type: 'heap', duration }, 'Heap profile collected successfully')
+    return profile
   }
 
   /**
@@ -71,9 +82,12 @@ export class Profiler {
    * @returns {Promise<Buffer>}
    */
   async encodeProfile (profile) {
+    this.logger?.debug('Starting profile encoding')
     // Use the profile's own encode() method to get uncompressed protobuf data
     // instead of pprof.encode() which returns gzipped data
     const encoded = await profile.encode()
-    return Buffer.from(encoded)
+    const buffer = Buffer.from(encoded)
+    this.logger?.debug({ size: buffer.length }, 'Profile encoded successfully')
+    return buffer
   }
 }

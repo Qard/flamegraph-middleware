@@ -67,10 +67,12 @@ import Fastify from 'fastify'
 import middie from '@fastify/middie'
 import { createFlamegraphMiddleware } from '@platformatic/flamegraph-middleware'
 
-const fastify = Fastify()
+const fastify = Fastify({ logger: true })
 
 await fastify.register(middie)
-fastify.use(createFlamegraphMiddleware())
+fastify.use(createFlamegraphMiddleware({
+  logger: fastify.log  // Use Fastify's pino logger
+}))
 
 fastify.get('/', async (request, reply) => {
   return { hello: 'world' }
@@ -117,9 +119,40 @@ createFlamegraphMiddleware({
   colors: {
     primary: '#ff4444',            // Primary flamegraph color (default: '#ff4444')
     secondary: '#ffcc66'           // Secondary flamegraph color (default: '#ffcc66')
-  }
+  },
+  logger: pinoLogger               // Pino logger instance (optional, no logging if not provided)
 })
 ```
+
+### Logging
+
+The middleware supports [pino](https://github.com/pinojs/pino) for structured logging. By default, if no logger is provided, the middleware will not log. You can pass your own pino logger instance to enable logging and integrate with your application's logging:
+
+```javascript
+import pino from 'pino'
+import { createFlamegraphMiddleware } from '@platformatic/flamegraph-middleware'
+
+// Custom logger configuration
+const logger = pino({
+  level: 'debug',
+  transport: {
+    target: 'pino-pretty'
+  }
+})
+
+const flamegraph = createFlamegraphMiddleware({ logger })
+```
+
+#### Log Levels
+
+The middleware logs at different levels:
+
+- **debug** - Detailed operation logs (profile ID generation, encoding steps, retrieval attempts)
+- **info** - Lifecycle events (profile requests, collection complete, storage operations)
+- **warn** - Warnings (profile evictions, timing issues)
+- **error** - Errors (profiling failures, encoding errors, storage issues)
+
+All logs include structured data with relevant context like `profileId`, `duration`, `component`, etc.
 
 ## API
 
@@ -139,6 +172,7 @@ Creates a middleware function for profiling.
   - `colors` (Object) - Color customization
     - `primary` (string) - Primary color for flamegraphs (hex format)
     - `secondary` (string) - Secondary color for flamegraphs (hex format)
+  - `logger` (Object) - Pino logger instance (optional, no logging if not provided)
 
 **Returns:** `Function` - Middleware function with signature `(req, res, next)`
 
@@ -258,6 +292,7 @@ createFlamegraphMiddleware({
 
 - [@datadog/pprof](https://www.npmjs.com/package/@datadog/pprof) - CPU and heap profiling
 - [react-pprof](https://www.npmjs.com/package/react-pprof) - Flamegraph visualization
+- [pino](https://www.npmjs.com/package/pino) - Fast structured logging
 
 ## Requirements
 
