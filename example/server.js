@@ -28,7 +28,8 @@ fastify.use(createFlamegraphMiddleware({
   colors: {
     primary: '#ff4444',
     secondary: '#ffcc66'
-  }
+  },
+  logger: fastify.log
 }))
 
 // Root route with instructions

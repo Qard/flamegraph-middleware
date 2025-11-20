@@ -9,6 +9,7 @@ export class ProfileStorage {
     this.profileTTL = options.profileTTL || 5 * 60 * 1000 // 5 minutes default
     this.profiles = new Map()
     this.inProgress = new Map()
+    this.logger = options.logger?.child({ component: 'storage' }) || options.logger
   }
 
   /**
@@ -17,7 +18,9 @@ export class ProfileStorage {
    * @returns {string} Unique profile ID
    */
   generateId () {
-    return crypto.randomBytes(16).toString('hex')
+    const id = crypto.randomBytes(16).toString('hex')
+    this.logger?.debug({ profileId: id }, 'Generated profile ID')
+    return id
   }
 
   /**
@@ -31,6 +34,7 @@ export class ProfileStorage {
       ...metadata,
       startTime: Date.now()
     })
+    this.logger?.debug({ profileId: id, metadata }, 'Marked profile as in-progress')
   }
 
   /**
@@ -67,10 +71,15 @@ export class ProfileStorage {
     if (this.profiles.size >= this.maxProfiles) {
       const oldestId = this.profiles.keys().next().value
       this.profiles.delete(oldestId)
+      this.logger?.warn(
+        { evictedProfileId: oldestId, newProfileId: id, maxProfiles: this.maxProfiles },
+        'Profile evicted due to maxProfiles limit'
+      )
     }
 
     // Store with expiration timer
     const timeout = setTimeout(() => {
+      this.logger?.debug({ profileId: id }, 'Profile expired and removed')
       this.profiles.delete(id)
     }, this.profileTTL)
 
@@ -79,6 +88,11 @@ export class ProfileStorage {
       expiresAt: Date.now() + this.profileTTL,
       timeout
     })
+
+    this.logger?.info(
+      { profileId: id, ttl: this.profileTTL, currentCount: this.profiles.size },
+      'Profile stored successfully'
+    )
   }
 
   /**
@@ -90,15 +104,18 @@ export class ProfileStorage {
   getProfile (id) {
     const entry = this.profiles.get(id)
     if (!entry) {
+      this.logger?.debug({ profileId: id, found: false }, 'Profile retrieval attempted')
       return null
     }
 
     // Check if expired (should have been cleaned up, but double-check)
     if (Date.now() > entry.expiresAt) {
       this.profiles.delete(id)
+      this.logger?.debug({ profileId: id, found: false, reason: 'expired' }, 'Profile retrieval attempted')
       return null
     }
 
+    this.logger?.debug({ profileId: id, found: true }, 'Profile retrieved successfully')
     return entry.data
   }
 
@@ -119,6 +136,9 @@ export class ProfileStorage {
    * Clean up all profiles and timers
    */
   cleanup () {
+    const profileCount = this.profiles.size
+    const inProgressCount = this.inProgress.size
+
     // Clear all timeouts
     for (const entry of this.profiles.values()) {
       if (entry.timeout) {
@@ -128,5 +148,10 @@ export class ProfileStorage {
 
     this.profiles.clear()
     this.inProgress.clear()
+
+    this.logger?.debug(
+      { clearedProfiles: profileCount, clearedInProgress: inProgressCount },
+      'Storage cleanup completed'
+    )
   }
 }
