@@ -1,7 +1,7 @@
 {
-  "name": "@platformatic/flamegraph-middleware",
+  "name": "flamegraph-middleware",
   "version": "1.0.0",
-  "description": "Node.js HTTP middleware for on-demand CPU and heap profiling with interactive flamegraph visualization",
+  "description": "HTTP middleware for CPU and heap profiling with flamegraph visualization",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -20,16 +20,16 @@
     "heap",
     "memory"
   ],
-  "author": "Platformatic Inc. <oss@platformatic.dev> (http://platformatic.dev/)",
+  "author": "Stephen Belanger <admin@stephenbelanger.com> (http://stephenbelanger.com/)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/platformatic/flamegraph-middleware.git"
+    "url": "git+https://github.com/qard/flamegraph-middleware.git"
   },
   "bugs": {
-    "url": "https://github.com/platformatic/flamegraph-middleware/issues"
+    "url": "https://github.com/qard/flamegraph-middleware/issues"
   },
-  "homepage": "https://github.com/platformatic/flamegraph-middleware#readme",
+  "homepage": "https://github.com/qard/flamegraph-middleware#readme",
   "dependencies": {
     "@datadog/pprof": "^5.9.0",
     "parse-duration": "^2.1.4",

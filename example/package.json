@@ -13,6 +13,6 @@
   "dependencies": {
     "fastify": "^5.2.0",
     "@fastify/middie": "^9.0.2",
-    "@platformatic/flamegraph-middleware": "file:.."
+    "flamegraph-middleware": "file:.."
   }
 }
