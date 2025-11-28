@@ -1,4 +1,4 @@
-# @platformatic/flamegraph-middleware
+# flamegraph-middleware
 
 Node.js HTTP middleware for on-demand CPU and heap profiling with interactive flamegraph visualization.
 
@@ -15,7 +15,7 @@ Node.js HTTP middleware for on-demand CPU and heap profiling with interactive fl
 ## Installation
 
 ```bash
-npm install @platformatic/flamegraph-middleware
+npm install Qard/flamegraph-middleware
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ npm install @platformatic/flamegraph-middleware
 
 ```javascript
 import http from 'http'
-import { createFlamegraphMiddleware } from '@platformatic/flamegraph-middleware'
+import { createFlamegraphMiddleware } from 'flamegraph-middleware'
 
 const flamegraph = createFlamegraphMiddleware()
 
@@ -44,7 +44,7 @@ console.log('Profile at http://localhost:3000/flamegraph?duration=5000')
 
 ```javascript
 import express from 'express'
-import { createFlamegraphMiddleware } from '@platformatic/flamegraph-middleware'
+import { createFlamegraphMiddleware } from 'flamegraph-middleware'
 
 const app = express()
 
@@ -65,7 +65,7 @@ app.listen(3000)
 ```javascript
 import Fastify from 'fastify'
 import middie from '@fastify/middie'
-import { createFlamegraphMiddleware } from '@platformatic/flamegraph-middleware'
+import { createFlamegraphMiddleware } from 'flamegraph-middleware'
 
 const fastify = Fastify({ logger: true })
 
@@ -130,7 +130,7 @@ The middleware supports [pino](https://github.com/pinojs/pino) for structured lo
 
 ```javascript
 import pino from 'pino'
-import { createFlamegraphMiddleware } from '@platformatic/flamegraph-middleware'
+import { createFlamegraphMiddleware } from 'flamegraph-middleware'
 
 // Custom logger configuration
 const logger = pino({
@@ -220,7 +220,7 @@ View profiling results for a specific session.
 ### Example with Authentication
 
 ```javascript
-import { createFlamegraphMiddleware } from '@platformatic/flamegraph-middleware'
+import { createFlamegraphMiddleware } from 'flamegraph-middleware'
 
 const flamegraph = createFlamegraphMiddleware()
 
@@ -302,11 +302,3 @@ createFlamegraphMiddleware({
 ## License
 
 Apache-2.0
-
-## Contributing
-
-Issues and pull requests are welcome at https://github.com/platformatic/flamegraph-middleware
-
-## Author
-
-Platformatic Inc. <oss@platformatic.dev> (http://platformatic.dev/)
