@@ -1,4 +1,3 @@
-import { parse as parseUrl } from 'node:url'
 import parseDuration from 'parse-duration'
 import { Profiler } from './profiler.js'
 import { ProfileStorage } from './storage.js'
@@ -56,9 +55,9 @@ export function createFlamegraphMiddleware (options = {}) {
    * Middleware function
    */
   return function flamegraphMiddleware (req, res, next) {
-    // Parse URL
-    const parsedUrl = parseUrl(req.url, true)
-    const pathname = parsedUrl.pathname
+    // Parse URL using WHATWG URL API
+    const url = new URL(req.url, 'http://localhost')
+    const pathname = url.pathname
 
     // Check if this request is for our middleware
     if (!pathname.startsWith(basePath)) {
@@ -70,7 +69,7 @@ export function createFlamegraphMiddleware (options = {}) {
 
     // Handle start profiling request
     if (subPath === '/' || subPath === '') {
-      return handleStartProfiling(req, res, parsedUrl.query)
+      return handleStartProfiling(req, res, url.searchParams)
     }
 
     // Handle result page request
@@ -87,17 +86,18 @@ export function createFlamegraphMiddleware (options = {}) {
   /**
    * Handle profiling start request
    */
-  async function handleStartProfiling (req, res, query) {
+  async function handleStartProfiling (req, res, searchParams) {
     try {
       // Parse duration from query string
       let duration
-      if (query.duration) {
+      const durationParam = searchParams.get('duration')
+      if (durationParam) {
         // Try parsing as human-readable duration first (e.g., "30s", "5m")
-        duration = parseDuration(query.duration)
+        duration = parseDuration(durationParam)
 
         // If parse-duration returns null, try as raw number
         if (duration === null) {
-          duration = parseInt(query.duration, 10)
+          duration = parseInt(durationParam, 10)
           if (isNaN(duration)) {
             return sendError(res, 'Invalid duration parameter. Use a number in milliseconds or human-readable format like "30s", "5m".', 400)
           }
