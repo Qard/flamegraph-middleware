@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "node --test test/**/*.test.js",
-    "test:coverage": "c8 node --test test/**/*.test.js",
+    "test": "node --test $(find test -name \"*.test.js\")",
+    "test:coverage": "c8 node --test $(find test -name \"*.test.js\")",
     "lint": "standard",
     "lint:fix": "standard --fix"
   },

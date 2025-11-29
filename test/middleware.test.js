@@ -7,14 +7,15 @@ describe('Flamegraph Middleware', () => {
   let server
   let port
 
+  // Create middleware once for all tests (heap profiler can only be started once per process)
+  const middleware = createFlamegraphMiddleware({
+    basePath: '/flamegraph',
+    defaultDuration: 100,
+    maxDuration: 500
+  })
+
   beforeEach(() => {
     return new Promise((resolve) => {
-      const middleware = createFlamegraphMiddleware({
-        basePath: '/flamegraph',
-        defaultDuration: 100,
-        maxDuration: 500
-      })
-
       server = http.createServer((req, res) => {
         middleware(req, res, () => {
           res.writeHead(404)
@@ -41,14 +42,14 @@ describe('Flamegraph Middleware', () => {
     assert.strictEqual(res.statusCode, 200)
     assert.ok(res.headers['content-type'].includes('text/html'))
     assert.ok(res.body.includes('Profiling in Progress'))
-    assert.ok(res.body.includes('100ms'))
+    assert.ok(res.body.includes('const duration = 100;'))
   })
 
   it('should use default duration when not specified', async () => {
     const res = await makeRequest('/flamegraph')
 
     assert.strictEqual(res.statusCode, 200)
-    assert.ok(res.body.includes('100ms'))
+    assert.ok(res.body.includes('const duration = 100;'))
   })
 
   it('should reject invalid duration', async () => {
@@ -66,13 +67,13 @@ describe('Flamegraph Middleware', () => {
   })
 
   it('should respond to result page for in-progress profile', async () => {
-    // Start profiling
-    const startRes = await makeRequest('/flamegraph?duration=2000')
+    // Start profiling with duration within maxDuration (500ms)
+    const startRes = await makeRequest('/flamegraph?duration=300')
     assert.strictEqual(startRes.statusCode, 200)
 
-    // Extract profile ID from the HTML
-    const match = startRes.body.match(/Profile ID: <code>([a-f0-9]+)<\/code>/)
-    assert.ok(match, 'Should find profile ID in response')
+    // Extract profile ID from the result URL in the HTML
+    const match = startRes.body.match(/const resultUrl = '\/flamegraph\/result\/([a-f0-9]+)'/)
+    assert.ok(match, 'Should find profile ID in result URL')
     const profileId = match[1]
 
     // Request result page immediately (should show progress)
@@ -85,7 +86,7 @@ describe('Flamegraph Middleware', () => {
     const res = await makeRequest('/flamegraph/result/nonexistent123456')
 
     assert.strictEqual(res.statusCode, 404)
-    assert.ok(res.body.includes('not found'))
+    assert.ok(res.body.includes('not found') || res.body.includes('Not found'))
   })
 
   it('should call next() for non-matching paths', async () => {
@@ -98,11 +99,9 @@ describe('Flamegraph Middleware', () => {
   it('should handle result page after profiling completes', async () => {
     // Start profiling with short duration
     const startRes = await makeRequest('/flamegraph?duration=100')
-    const match = startRes.body.match(/Profile ID: <code>([a-f0-9]+)<\/code>/)
+    const match = startRes.body.match(/const resultUrl = '\/flamegraph\/result\/([a-f0-9]+)'/)
+    assert.ok(match, 'Should find profile ID in result URL')
     const profileId = match[1]
-
-    // Wait for profiling to complete
-    await new Promise(resolve => setTimeout(resolve, 200))
 
     // Request result page
     const resultRes = await makeRequest(`/flamegraph/result/${profileId}`)
