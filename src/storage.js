@@ -77,11 +77,12 @@ export class ProfileStorage {
       )
     }
 
-    // Store with expiration timer
+    // Store with expiration timer (unref'd so it doesn't keep the process alive)
     const timeout = setTimeout(() => {
       this.logger?.debug({ profileId: id }, 'Profile expired and removed')
       this.profiles.delete(id)
     }, this.profileTTL)
+    timeout.unref()
 
     this.profiles.set(id, {
       data,

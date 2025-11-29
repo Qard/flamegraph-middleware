@@ -48,6 +48,9 @@ export function createFlamegraphMiddleware (options = {}) {
 
   // Start heap profiling once
   profiler.startHeapProfiling()
+  process.on('beforeExit', () => {
+    profiler.stopHeapProfiling()
+  })
 
   /**
    * Middleware function
@@ -115,7 +118,7 @@ export function createFlamegraphMiddleware (options = {}) {
       // Generate unique profile ID
       const profileId = storage.generateId()
 
-      middlewareLogger.info(
+      middlewareLogger?.info(
         { profileId, duration, basePath },
         'Profiling request received'
       )
@@ -127,7 +130,7 @@ export function createFlamegraphMiddleware (options = {}) {
       collectProfilesInBackground(profileId, duration)
 
       // Send progress page immediately
-      middlewareLogger.debug({ profileId }, 'Sending progress page')
+      middlewareLogger?.debug({ profileId }, 'Sending progress page')
       const html = generateProgressPage(profileId, duration, basePath)
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
@@ -135,7 +138,7 @@ export function createFlamegraphMiddleware (options = {}) {
       })
       res.end(html)
     } catch (error) {
-      middlewareLogger.error({ err: error }, 'Error starting profiling')
+      middlewareLogger?.error({ err: error }, 'Error starting profiling')
       return sendError(res, 'Failed to start profiling', 500)
     }
   }
@@ -145,7 +148,7 @@ export function createFlamegraphMiddleware (options = {}) {
    */
   async function handleResultPage (req, res, profileId) {
     try {
-      middlewareLogger.debug({ profileId }, 'Result page requested')
+      middlewareLogger?.debug({ profileId }, 'Result page requested')
 
       // Check if profile is still in progress
       if (storage.isInProgress(profileId)) {
@@ -155,7 +158,7 @@ export function createFlamegraphMiddleware (options = {}) {
 
         // If still profiling, show progress page again
         if (remaining > 0) {
-          middlewareLogger.debug({ profileId, remaining }, 'Profile still in progress')
+          middlewareLogger?.debug({ profileId, remaining }, 'Profile still in progress')
           const html = generateProgressPage(profileId, remaining, basePath)
           res.writeHead(200, {
             'Content-Type': 'text/html; charset=utf-8',
@@ -165,7 +168,7 @@ export function createFlamegraphMiddleware (options = {}) {
         }
 
         // Profile should be done but not yet stored, wait a bit
-        middlewareLogger.warn({ profileId, elapsed }, 'Profile completed but not yet stored')
+        middlewareLogger?.warn({ profileId, elapsed }, 'Profile completed but not yet stored')
         return sendError(res, 'Profile is being processed. Please refresh in a moment.', 202)
       }
 
@@ -177,21 +180,21 @@ export function createFlamegraphMiddleware (options = {}) {
       }
 
       // Generate results page
-      middlewareLogger.debug({ profileId }, 'Generating flamegraph results page')
+      middlewareLogger?.debug({ profileId }, 'Generating flamegraph results page')
       const html = await generateResultsPage(
         profileData.cpu,
         profileData.heap,
         { primaryColor, secondaryColor }
       )
 
-      middlewareLogger.info({ profileId }, 'Results page generated successfully')
+      middlewareLogger?.info({ profileId }, 'Results page generated successfully')
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Length': Buffer.byteLength(html)
       })
       res.end(html)
     } catch (error) {
-      middlewareLogger.error({ err: error, profileId }, 'Error handling result page')
+      middlewareLogger?.error({ err: error, profileId }, 'Error handling result page')
       return sendError(res, 'Failed to generate results page', 500)
     }
   }
@@ -201,12 +204,12 @@ export function createFlamegraphMiddleware (options = {}) {
    */
   async function collectProfilesInBackground (profileId, duration) {
     try {
-      middlewareLogger.debug({ profileId, duration }, 'Starting background profile collection')
+      middlewareLogger?.debug({ profileId, duration }, 'Starting background profile collection')
 
       // Collect both profiles
       const profiles = await profiler.collectProfiles(duration)
 
-      middlewareLogger.debug({ profileId }, 'Profiles collected, encoding')
+      middlewareLogger?.debug({ profileId }, 'Profiles collected, encoding')
 
       // Encode profiles to buffers
       const [cpuBuffer, heapBuffer] = await Promise.all([
@@ -214,7 +217,7 @@ export function createFlamegraphMiddleware (options = {}) {
         profiler.encodeProfile(profiles.heap)
       ])
 
-      middlewareLogger.info(
+      middlewareLogger?.info(
         { profileId, cpuSize: cpuBuffer.length, heapSize: heapBuffer.length },
         'Profiles encoded successfully'
       )
@@ -225,7 +228,7 @@ export function createFlamegraphMiddleware (options = {}) {
         heap: heapBuffer
       })
     } catch (error) {
-      middlewareLogger.error({ err: error, profileId, duration }, 'Error collecting profiles')
+      middlewareLogger?.error({ err: error, profileId, duration }, 'Error collecting profiles')
       // Profile will remain in progress and eventually time out
     }
   }

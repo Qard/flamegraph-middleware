@@ -26,6 +26,17 @@ export class Profiler {
   }
 
   /**
+   * Stop heap profiling
+   */
+  stopHeapProfiling () {
+    if (this.heapStarted) {
+      pprof.heap.stop()
+      this.heapStarted = false
+      this.logger?.debug('Heap profiling stopped')
+    }
+  }
+
+  /**
    * Collect both CPU and heap profiles concurrently
    *
    * @param {number} duration - Duration in milliseconds
